@@ -4,7 +4,9 @@ import torch
 import matplotlib.pyplot as plt
 
 
-def prepare_data(args, dataset, dataset_name, i, idx_start=None, idx_end=None, to_numpy=False):
+def prepare_data(
+    args, dataset, dataset_name, i, idx_start=None, idx_end=None, to_numpy=False
+):
     # get data
     t, ang_gt, p_gt, v_gt, u = dataset.get_data(dataset_name)
 
@@ -15,11 +17,11 @@ def prepare_data(args, dataset, dataset_name, i, idx_start=None, idx_end=None, t
     if idx_end is None:
         idx_end = t.shape[0]
 
-    t = t[idx_start: idx_end]
-    u = u[idx_start: idx_end]
-    ang_gt = ang_gt[idx_start: idx_end]
-    v_gt = v_gt[idx_start: idx_end]
-    p_gt = p_gt[idx_start: idx_end] - p_gt[idx_start]
+    t = t[idx_start:idx_end]
+    u = u[idx_start:idx_end]
+    ang_gt = ang_gt[idx_start:idx_end]
+    v_gt = v_gt[idx_start:idx_end]
+    p_gt = p_gt[idx_start:idx_end] - p_gt[idx_start]
 
     if to_numpy:
         t = t.cpu().double().numpy()
@@ -35,8 +37,7 @@ def create_folder(directory):
         if not os.path.exists(directory):
             os.makedirs(directory)
     except OSError:
-        print ('Error: Creating directory. ' + directory)
-
+        print("Error: Creating directory. " + directory)
 
 
 def umeyama_alignment(x, y, with_scale=False):
@@ -52,7 +53,6 @@ def umeyama_alignment(x, y, with_scale=False):
     :return: r, t, c - rotation matrix, translation vector and scale factor
     """
 
-
     # m = dimension, n = nr. of data points
     m, n = x.shape
 
@@ -62,7 +62,7 @@ def umeyama_alignment(x, y, with_scale=False):
 
     # variance, eq. 36
     # "transpose" for column subtraction
-    sigma_x = 1.0 / n * (np.linalg.norm(x - mean_x[:, np.newaxis])**2)
+    sigma_x = 1.0 / n * (np.linalg.norm(x - mean_x[:, np.newaxis]) ** 2)
 
     # covariance matrix, eq. 38
     outer_sum = np.zeros((m, m))
@@ -87,4 +87,3 @@ def umeyama_alignment(x, y, with_scale=False):
     t = mean_y - np.multiply(c, r.dot(mean_x))
 
     return r, t, c
-

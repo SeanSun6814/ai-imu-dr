@@ -58,28 +58,35 @@ class KITTIParameters(IEKF.Parameters):
         self.set_param_attr()
 
     def set_param_attr(self):
-        attr_list = [a for a in dir(KITTIParameters) if
-                     not a.startswith('__') and not callable(getattr(KITTIParameters, a))]
+        attr_list = [
+            a
+            for a in dir(KITTIParameters)
+            if not a.startswith("__") and not callable(getattr(KITTIParameters, a))
+        ]
         for attr in attr_list:
             setattr(self, attr, getattr(KITTIParameters, attr))
 
 
 class KITTIDataset(BaseDataset):
-    OxtsPacket = namedtuple('OxtsPacket',
-                            'lat, lon, alt, ' + 'roll, pitch, yaw, ' + 'vn, ve, vf, vl, vu, '
-                                                                       '' + 'ax, ay, az, af, al, '
-                                                                            'au, ' + 'wx, wy, wz, '
-                                                                                     'wf, wl, wu, '
-                                                                                     '' +
-                            'pos_accuracy, vel_accuracy, ' + 'navstat, numsats, ' + 'posmode, '
-                                                                                  'velmode, '
-                                                                                  'orimode')
+    OxtsPacket = namedtuple(
+        "OxtsPacket",
+        "lat, lon, alt, " + "roll, pitch, yaw, " + "vn, ve, vf, vl, vu, "
+        "" + "ax, ay, az, af, al, "
+        "au, " + "wx, wy, wz, "
+        "wf, wl, wu, "
+        "" + "pos_accuracy, vel_accuracy, " + "navstat, numsats, " + "posmode, "
+        "velmode, "
+        "orimode",
+    )
 
     # Bundle into an easy-to-access structure
-    OxtsData = namedtuple('OxtsData', 'packet, T_w_imu')
+    OxtsData = namedtuple("OxtsData", "packet, T_w_imu")
     min_seq_dim = 25 * 100  # 60 s
-    datasets_fake = ['2011_09_26_drive_0093_extract', '2011_09_28_drive_0039_extract',
-                     '2011_09_28_drive_0002_extract']
+    datasets_fake = [
+        "2011_09_26_drive_0093_extract",
+        "2011_09_28_drive_0039_extract",
+        "2011_09_28_drive_0002_extract",
+    ]
     """
     '2011_09_30_drive_0028_extract' has trouble at N = [6000, 14000] -> test data
     '2011_10_03_drive_0027_extract' has trouble at N = 29481
@@ -118,7 +125,10 @@ class KITTIDataset(BaseDataset):
     def __init__(self, args):
         super(KITTIDataset, self).__init__(args)
 
-        self.datasets_validatation_filter['2011_09_30_drive_0028_extract'] = [11231, 53650]
+        self.datasets_validatation_filter["2011_09_30_drive_0028_extract"] = [
+            11231,
+            53650,
+        ]
         self.datasets_train_filter["2011_10_03_drive_0042_extract"] = [0, None]
         self.datasets_train_filter["2011_09_30_drive_0018_extract"] = [0, 15000]
         self.datasets_train_filter["2011_09_30_drive_0020_extract"] = [0, None]
@@ -158,7 +168,9 @@ class KITTIDataset(BaseDataset):
                 if not os.path.isdir(path2):
                     continue
                 # read data
-                oxts_files = sorted(glob.glob(os.path.join(path2, 'oxts', 'data', '*.txt')))
+                oxts_files = sorted(
+                    glob.glob(os.path.join(path2, "oxts", "data", "*.txt"))
+                )
                 oxts = KITTIDataset.load_oxts_packets_and_poses(oxts_files)
 
                 """ Note on difference between ground truth and oxts solution:
@@ -169,8 +181,13 @@ class KITTIDataset(BaseDataset):
                 """
 
                 print("\n Sequence name : " + date_dir2)
-                if len(oxts) < KITTIDataset.min_seq_dim:  #  sequence shorter than 30 s are rejected
-                    cprint("Dataset is too short ({:.2f} s)".format(len(oxts) / 100), 'yellow')
+                if (
+                    len(oxts) < KITTIDataset.min_seq_dim
+                ):  #  sequence shorter than 30 s are rejected
+                    cprint(
+                        "Dataset is too short ({:.2f} s)".format(len(oxts) / 100),
+                        "yellow",
+                    )
                     continue
                 lat_oxts = np.zeros(len(oxts))
                 lon_oxts = np.zeros(len(oxts))
@@ -193,8 +210,12 @@ class KITTIDataset(BaseDataset):
                 k_max = len(oxts)
                 for k in range(k_max):
                     oxts_k = oxts[k]
-                    t[k] = 3600 * t[k].hour + 60 * t[k].minute + t[k].second + t[
-                        k].microsecond / 1e6
+                    t[k] = (
+                        3600 * t[k].hour
+                        + 60 * t[k].minute
+                        + t[k].second
+                        + t[k].microsecond / 1e6
+                    )
                     lat_oxts[k] = oxts_k[0].lat
                     lon_oxts[k] = oxts_k[0].lon
                     alt_oxts[k] = oxts_k[0].alt
@@ -227,14 +248,23 @@ class KITTIDataset(BaseDataset):
                 t = np.array(t) - t[0]
                 # some data can have gps out
                 if np.max(t[:-1] - t[1:]) > 0.1:
-                    cprint(date_dir2 + " has time problem", 'yellow')
+                    cprint(date_dir2 + " has time problem", "yellow")
                 ang_gt = np.zeros((roll_gt.shape[0], 3))
                 ang_gt[:, 0] = roll_gt
                 ang_gt[:, 1] = pitch_gt
                 ang_gt[:, 2] = yaw_gt
 
-                p_oxts = lla2ned(lat_oxts, lon_oxts, alt_oxts, lat_oxts[0], lon_oxts[0],
-                                 alt_oxts[0], latlon_unit='deg', alt_unit='m', model='wgs84')
+                p_oxts = lla2ned(
+                    lat_oxts,
+                    lon_oxts,
+                    alt_oxts,
+                    lat_oxts[0],
+                    lon_oxts[0],
+                    alt_oxts[0],
+                    latlon_unit="deg",
+                    alt_unit="m",
+                    model="wgs84",
+                )
                 p_oxts[:, [0, 1]] = p_oxts[:, [1, 0]]  # see note
 
                 # take correct imu measurements
@@ -254,9 +284,14 @@ class KITTIDataset(BaseDataset):
                 v_gt = v_gt.float()
 
                 mondict = {
-                    't': t, 'p_gt': p_gt, 'ang_gt': ang_gt, 'v_gt': v_gt,
-                    'u': u, 'name': date_dir2, 't0': t0
-                    }
+                    "t": t,
+                    "p_gt": p_gt,
+                    "ang_gt": ang_gt,
+                    "v_gt": v_gt,
+                    "u": u,
+                    "name": date_dir2,
+                    "t0": t0,
+                }
 
                 t_tot += t[-1] - t[0]
                 KITTIDataset.dump(mondict, args.path_data_save, date_dir2)
@@ -270,8 +305,14 @@ class KITTIDataset(BaseDataset):
 
         """
 
-        unused_list = ['image_00', 'image_01', 'image_02', 'image_03', 'velodyne_points']
-        date_dirs = ['2011_09_28', '2011_09_29', '2011_09_30', '2011_10_03']
+        unused_list = [
+            "image_00",
+            "image_01",
+            "image_02",
+            "image_03",
+            "velodyne_points",
+        ]
+        date_dirs = ["2011_09_28", "2011_09_29", "2011_09_30", "2011_10_03"]
 
         for date_dir in date_dirs:
             path1 = os.path.join(args.path_data_base, date_dir)
@@ -321,13 +362,12 @@ class KITTIDataset(BaseDataset):
 
     @staticmethod
     def pose_from_oxts_packet(packet, scale):
-        """Helper method to compute a SE(3) pose matrix from an OXTS packet.
-        """
-        er = 6378137.  # earth radius (approx.) in meters
+        """Helper method to compute a SE(3) pose matrix from an OXTS packet."""
+        er = 6378137.0  # earth radius (approx.) in meters
 
         # Use a Mercator projection to get the translation vector
-        tx = scale * packet.lon * np.pi * er / 180.
-        ty = scale * er * np.log(np.tan((90. + packet.lat) * np.pi / 360.))
+        tx = scale * packet.lon * np.pi * er / 180.0
+        ty = scale * er * np.log(np.tan((90.0 + packet.lat) * np.pi / 360.0))
         tz = packet.alt
         t = np.array([tx, ty, tz])
 
@@ -350,8 +390,8 @@ class KITTIDataset(BaseDataset):
     @staticmethod
     def load_oxts_packets_and_poses(oxts_files):
         """Generator to read OXTS ground truth data.
-           Poses are given in an East-North-Up coordinate system
-           whose origin is the first GPS position.
+        Poses are given in an East-North-Up coordinate system
+        whose origin is the first GPS position.
         """
         # Scale for Mercator projection (from first lat value)
         scale = None
@@ -361,7 +401,7 @@ class KITTIDataset(BaseDataset):
         oxts = []
 
         for filename in oxts_files:
-            with open(filename, 'r') as f:
+            with open(filename, "r") as f:
                 for line in f.readlines():
                     line = line.split()
                     # Last five entries are flags and counts
@@ -371,7 +411,7 @@ class KITTIDataset(BaseDataset):
                     packet = KITTIDataset.OxtsPacket(*line)
 
                     if scale is None:
-                        scale = np.cos(packet.lat * np.pi / 180.)
+                        scale = np.cos(packet.lat * np.pi / 180.0)
 
                     R, t = KITTIDataset.pose_from_oxts_packet(packet, scale)
 
@@ -386,31 +426,31 @@ class KITTIDataset(BaseDataset):
     @staticmethod
     def load_timestamps(data_path):
         """Load timestamps from file."""
-        timestamp_file = os.path.join(data_path, 'oxts', 'timestamps.txt')
+        timestamp_file = os.path.join(data_path, "oxts", "timestamps.txt")
 
         # Read and parse the timestamps
         timestamps = []
-        with open(timestamp_file, 'r') as f:
+        with open(timestamp_file, "r") as f:
             for line in f.readlines():
                 # NB: datetime only supports microseconds, but KITTI timestamps
                 # give nanoseconds, so need to truncate last 4 characters to
                 # get rid of \n (counts as 1) and extra 3 digits
-                t = datetime.datetime.strptime(line[:-4], '%Y-%m-%d %H:%M:%S.%f')
+                t = datetime.datetime.strptime(line[:-4], "%Y-%m-%d %H:%M:%S.%f")
                 timestamps.append(t)
         return timestamps
 
     def load_timestamps_img(data_path):
         """Load timestamps from file."""
-        timestamp_file = os.path.join(data_path, 'image_00', 'timestamps.txt')
+        timestamp_file = os.path.join(data_path, "image_00", "timestamps.txt")
 
         # Read and parse the timestamps
         timestamps = []
-        with open(timestamp_file, 'r') as f:
+        with open(timestamp_file, "r") as f:
             for line in f.readlines():
                 # NB: datetime only supports microseconds, but KITTI timestamps
                 # give nanoseconds, so need to truncate last 4 characters to
                 # get rid of \n (counts as 1) and extra 3 digits
-                t = datetime.datetime.strptime(line[:-4], '%Y-%m-%d %H:%M:%S.%f')
+                t = datetime.datetime.strptime(line[:-4], "%Y-%m-%d %H:%M:%S.%f")
                 timestamps.append(t)
         return timestamps
 
@@ -433,52 +473,61 @@ def test_filter(args, dataset):
         if dataset_name not in dataset.odometry_benchmark.keys():
             continue
         print("Test filter on sequence: " + dataset_name)
-        t, ang_gt, p_gt, v_gt, u = prepare_data(args, dataset, dataset_name, i,
-                                                       to_numpy=True)
+        t, ang_gt, p_gt, v_gt, u = prepare_data(
+            args, dataset, dataset_name, i, to_numpy=True
+        )
         N = None
         u_t = torch.from_numpy(u).double()
         measurements_covs = torch_iekf.forward_nets(u_t)
         measurements_covs = measurements_covs.detach().numpy()
         start_time = time.time()
-        Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i = iekf.run(t, u, measurements_covs,
-                                                                   v_gt, p_gt, N,
-                                                                   ang_gt[0])
+        Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i = iekf.run(
+            t, u, measurements_covs, v_gt, p_gt, N, ang_gt[0]
+        )
         diff_time = time.time() - start_time
-        print("Execution time: {:.2f} s (sequence time: {:.2f} s)".format(diff_time,
-                                                                          t[-1] - t[0]))
+        print(
+            "Execution time: {:.2f} s (sequence time: {:.2f} s)".format(
+                diff_time, t[-1] - t[0]
+            )
+        )
         mondict = {
-            't': t, 'Rot': Rot, 'v': v, 'p': p, 'b_omega': b_omega, 'b_acc': b_acc,
-            'Rot_c_i': Rot_c_i, 't_c_i': t_c_i,
-            'measurements_covs': measurements_covs,
-            }
+            "t": t,
+            "Rot": Rot,
+            "v": v,
+            "p": p,
+            "b_omega": b_omega,
+            "b_acc": b_acc,
+            "Rot_c_i": Rot_c_i,
+            "t_c_i": t_c_i,
+            "measurements_covs": measurements_covs,
+        }
         dataset.dump(mondict, args.path_results, dataset_name + "_filter.p")
 
 
-class KITTIArgs():
-        path_data_base = "/media/mines/46230797-4d43-4860-9b76-ce35e699ea47/KITTI/raw"
-        path_data_save = "../data"
-        path_results = "../results"
-        path_temp = "../temp"
+class KITTIArgs:
+    path_data_base = "/media/mines/46230797-4d43-4860-9b76-ce35e699ea47/KITTI/raw"
+    path_data_save = "../data"
+    path_results = "../results"
+    path_temp = "../temp"
 
-        epochs = 400
-        seq_dim = 6000
+    epochs = 400
+    seq_dim = 6000
 
-        # training, cross-validation and test dataset
-        cross_validation_sequences = ['2011_09_30_drive_0028_extract']
-        test_sequences = ['2011_09_30_drive_0028_extract']
-        continue_training = True
+    # training, cross-validation and test dataset
+    cross_validation_sequences = ["2011_09_30_drive_0028_extract"]
+    test_sequences = ["2011_09_30_drive_0028_extract"]
+    continue_training = True
 
-        # choose what to do
-        read_data = 0
-        train_filter = 0
-        test_filter = 1
-        results_filter = 1
-        dataset_class = KITTIDataset
-        parameter_class = KITTIParameters
+    # choose what to do
+    read_data = 0
+    train_filter = 1
+    test_filter = 1
+    results_filter = 1
+    dataset_class = KITTIDataset
+    parameter_class = KITTIParameters
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = KITTIArgs()
     dataset = KITTIDataset(args)
     launch(KITTIArgs)
-

@@ -40,10 +40,10 @@ class BaseDataset(Dataset):
         """Validation dataset with index for starting/ending"""
 
         # noise added to the data
-        self.sigma_gyro = 1.e-4
-        self.sigma_acc = 1.e-4
-        self.sigma_b_gyro = 1.e-5
-        self.sigma_b_acc = 1.e-4
+        self.sigma_gyro = 1.0e-4
+        self.sigma_acc = 1.0e-4
+        self.sigma_b_gyro = 1.0e-5
+        self.sigma_b_acc = 1.0e-4
 
         # number of training data points
         self.num_data = 0
@@ -67,7 +67,9 @@ class BaseDataset(Dataset):
 
     def divide_datasets(self):
         for dataset in self.datasets:
-            if (not dataset in self.datasets_test) and (not dataset in self.datasets_validation):
+            if (not dataset in self.datasets_test) and (
+                not dataset in self.datasets_validation
+            ):
                 self.datasets_train += [dataset]
 
     def dataset_name(self, i):
@@ -75,16 +77,21 @@ class BaseDataset(Dataset):
 
     def get_data(self, i):
         pickle_dict = self[self.datasets.index(i) if type(i) != int else i]
-        return pickle_dict['t'], pickle_dict['ang_gt'], pickle_dict['p_gt'], pickle_dict['v_gt'],\
-               pickle_dict['u']
+        return (
+            pickle_dict["t"],
+            pickle_dict["ang_gt"],
+            pickle_dict["p_gt"],
+            pickle_dict["v_gt"],
+            pickle_dict["u"],
+        )
 
     def set_normalize_factors(self):
         path_normalize_factor = os.path.join(self.path_temp, self.file_normalize_factor)
         # we set factors only if file does not exist
         if os.path.isfile(path_normalize_factor):
             pickle_dict = self.load(path_normalize_factor)
-            self.normalize_factors = pickle_dict['normalize_factors']
-            self.num_data = pickle_dict['num_data']
+            self.normalize_factors = pickle_dict["normalize_factors"]
+            self.num_data = pickle_dict["num_data"]
             return
 
         # first compute mean
@@ -92,7 +99,7 @@ class BaseDataset(Dataset):
 
         for i, dataset in enumerate(self.datasets_train):
             pickle_dict = self.load(self.path_data_save, dataset)
-            u = pickle_dict['u']
+            u = pickle_dict["u"]
             if i == 0:
                 u_loc = u.sum(dim=0)
             else:
@@ -103,7 +110,7 @@ class BaseDataset(Dataset):
         # second compute standard deviation
         for i, dataset in enumerate(self.datasets_train):
             pickle_dict = self.load(self.path_data_save, dataset)
-            u = pickle_dict['u']
+            u = pickle_dict["u"]
             if i == 0:
                 u_std = ((u - u_loc) ** 2).sum(dim=0)
             else:
@@ -111,11 +118,14 @@ class BaseDataset(Dataset):
         u_std = (u_std / self.num_data).sqrt()
 
         self.normalize_factors = {
-            'u_loc': u_loc, 'u_std': u_std,
-            }
-        print('... ended computing normalizing factors')
+            "u_loc": u_loc,
+            "u_std": u_std,
+        }
+        print("... ended computing normalizing factors")
         pickle_dict = {
-            'normalize_factors': self.normalize_factors, 'num_data': self.num_data}
+            "normalize_factors": self.normalize_factors,
+            "num_data": self.num_data,
+        }
         self.dump(pickle_dict, path_normalize_factor)
 
     def normalize(self, u):
@@ -125,7 +135,7 @@ class BaseDataset(Dataset):
         return u_normalized
 
     def add_noise(self, u):
-        w = torch.randn_like(u[:, :6]) # noise
+        w = torch.randn_like(u[:, :6])  # noise
         w_b = torch.randn_like(u[0, :6])  # bias
         w[:, :3] *= self.sigma_gyro
         w[:, 3:6] *= self.sigma_acc
@@ -133,7 +143,6 @@ class BaseDataset(Dataset):
         w_b[3:6] *= self.sigma_b_acc
         u[:, :6] += w + w_b
         return u
-
 
     @staticmethod
     def read_data(args):
@@ -161,25 +170,24 @@ class BaseDataset(Dataset):
         b_acc0 = torch.zeros(3).double()
         Rot_c_i0 = torch.eye(3).double()
         t_c_i0 = torch.zeros(3).double()
-        return b_omega0, b_acc0, Rot_c_i0, t_c_i0  
+        return b_omega0, b_acc0, Rot_c_i0, t_c_i0
 
     def get_estimates(self, dataset_name):
         #  Obtain  estimates
-        dataset_name = self.datasets[dataset_name] if type(dataset_name) == int else \
-            dataset_name
+        dataset_name = (
+            self.datasets[dataset_name] if type(dataset_name) == int else dataset_name
+        )
         file_name = os.path.join(self.path_results, dataset_name + "_filter.p")
         if not os.path.exists(file_name):
-            print('No result for ' + dataset_name)
+            print("No result for " + dataset_name)
             return
         mondict = self.load(file_name)
-        Rot = mondict['Rot']
-        v = mondict['v']
-        p = mondict['p']
-        b_omega = mondict['b_omega']
-        b_acc = mondict['b_acc']
-        Rot_c_i = mondict['Rot_c_i']
-        t_c_i = mondict['t_c_i']
-        measurements_covs = mondict['measurements_covs']
-        return Rot, v, p , b_omega, b_acc, Rot_c_i, t_c_i, measurements_covs
-
-
+        Rot = mondict["Rot"]
+        v = mondict["v"]
+        p = mondict["p"]
+        b_omega = mondict["b_omega"]
+        b_acc = mondict["b_acc"]
+        Rot_c_i = mondict["Rot_c_i"]
+        t_c_i = mondict["t_c_i"]
+        measurements_covs = mondict["measurements_covs"]
+        return Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, measurements_covs
