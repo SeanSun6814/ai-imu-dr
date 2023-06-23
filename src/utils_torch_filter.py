@@ -7,6 +7,8 @@ from termcolor import cprint
 from utils_numpy_filter import NUMPYIEKF
 from utils import prepare_data
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 class InitProcessCovNet(torch.nn.Module):
     def __init__(self):
@@ -63,8 +65,10 @@ class MesNet(torch.nn.Module):
         self.cov_lin[0].weight.data[:] /= 100
 
     def forward(self, u, iekf):
+        u = u.to(device)
         y_cov = self.cov_net(u).transpose(0, 2).squeeze()
         z_cov = self.cov_lin(y_cov)
+        z_cov = z_cov.cpu()
         z_cov_net = self.beta_measurement.unsqueeze(0) * z_cov
         measurements_covs = iekf.cov0_measurement.unsqueeze(0) * (10**z_cov_net)
         return measurements_covs
@@ -85,7 +89,7 @@ class TORCHIEKF(torch.nn.Module, NUMPYIEKF):
         self.u_loc = None
         self.u_std = None
         self.initprocesscov_net = InitProcessCovNet()
-        self.mes_net = MesNet()
+        self.mes_net = MesNet().to(device)
         self.cov0_measurement = None
 
         # modified parameters
@@ -319,7 +323,7 @@ class TORCHIEKF(torch.nn.Module, NUMPYIEKF):
     @staticmethod
     def state_and_cov_update(Rot, v, p, b_omega, b_acc, Rot_c_i, t_c_i, P, H, r, R):
         S = H.mm(P).mm(H.t()) + R
-        Kt, _ = torch.gesv(P.mm(H.t()).t(), S)
+        Kt, _ = torch.solve(P.mm(H.t()).t(), S)
         K = Kt.t()
         dx = K.mv(r.view(-1))
 

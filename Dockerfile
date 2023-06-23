@@ -1,7 +1,14 @@
-FROM pytorch/pytorch:1.8.1-cuda10.2-cudnn7-runtime
+FROM pytorch/pytorch:1.10.0-cuda11.3-cudnn8-devel
 
 # Set working directory
 WORKDIR /ai-imu-dr
+
+# RUN apt-key del 7fa2af80 && \
+# wget https://developer.download.nvidia.com/compute/cuda/repos/$distro/$arch/cuda-keyring_1.0-1_all.deb && \
+# dpkg -i cuda-keyring_1.0-1_all.deb && \
+# rm cuda-keyring_1.0-1_all.deb
+
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
 
 # Install necessary packages
 RUN apt-get update && apt-get install -y wget unzip

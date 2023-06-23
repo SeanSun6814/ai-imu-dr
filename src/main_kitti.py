@@ -129,14 +129,14 @@ class KITTIDataset(BaseDataset):
             11231,
             53650,
         ]
-        self.datasets_train_filter["2011_10_03_drive_0042_extract"] = [0, None]
+        # self.datasets_train_filter["2011_10_03_drive_0042_extract"] = [0, None]
         self.datasets_train_filter["2011_09_30_drive_0018_extract"] = [0, 15000]
-        self.datasets_train_filter["2011_09_30_drive_0020_extract"] = [0, None]
-        self.datasets_train_filter["2011_09_30_drive_0027_extract"] = [0, None]
-        self.datasets_train_filter["2011_09_30_drive_0033_extract"] = [0, None]
+        # self.datasets_train_filter["2011_09_30_drive_0020_extract"] = [0, None]
+        # self.datasets_train_filter["2011_09_30_drive_0027_extract"] = [0, None]
+        # self.datasets_train_filter["2011_09_30_drive_0033_extract"] = [0, None]
         self.datasets_train_filter["2011_10_03_drive_0027_extract"] = [0, 18000]
         self.datasets_train_filter["2011_10_03_drive_0034_extract"] = [0, 31000]
-        self.datasets_train_filter["2011_09_30_drive_0034_extract"] = [0, None]
+        # self.datasets_train_filter["2011_09_30_drive_0034_extract"] = [0, None]
 
         for dataset_fake in KITTIDataset.datasets_fake:
             if dataset_fake in self.datasets:
